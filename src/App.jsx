@@ -1,15 +1,14 @@
-
 import React from 'react'
 import './App.css'
+import DraftEditor from './Components/Editor'
+// import PageContainer from './Components/PageContainer'
 
 function App() {
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold underline">
-        Hello world!
-      </h1>
-
+    <div pt-8>
+      <DraftEditor />
+      {/* <PageContainer /> */}
     </div>
   )
 }
