@@ -1,4 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
+import { Modifier, SelectionState, ContentBlock } from 'draft-js';
+
 import {
     Editor,
     EditorState,
@@ -6,7 +8,7 @@ import {
     convertToRaw,
     convertFromRaw,
 } from "draft-js";
-// import Toolbar from "./Toolbar";
+import Toolbar from "./Toolbar";
 // import "./DraftEditor.css";
 
 const DraftEditor = () => {
@@ -65,8 +67,10 @@ const DraftEditor = () => {
 
     const handleKeyCommand = (command) => {
         const newState = RichUtils.handleKeyCommand(editorState, command);
+        console.log(newState + " new state");
         if (newState) {
             setEditorState(newState);
+            console.log(editorState);
             return true;
         }
         return false;
@@ -110,6 +114,14 @@ const DraftEditor = () => {
 
     // FOR BLOCK LEVEL STYLES(Returns CSS Class From DraftEditor.css)
     const myBlockStyleFn = (contentBlock) => {
+        const text = contentBlock.getText();
+        if (text.startsWith('# ')) {
+            return 'bold';
+        } else if (text.startsWith('## ')) {
+            return 'italic';
+        } else if (text.startsWith('### ')) {
+            return 'underline';
+        }
         const type = contentBlock.getType();
         switch (type) {
             case "blockQuote":
@@ -127,9 +139,53 @@ const DraftEditor = () => {
         }
     };
 
+    const changeHandler = (editorState) => {
+        const contentState = editorState.getCurrentContent();
+        console.log(contentState)
+        const blocks = contentState.getBlockMap();
+        let newEditorState = editorState;
+
+        blocks.forEach((contentBlock, blockKey) => {
+            const text = contentBlock.getText();
+            if (text.startsWith('# ')) {
+                myBlockStyleFn(contentBlock);
+                const newText = text.substring(2); // Remove '# ' from the beginning
+                let newContentState = Modifier.replaceText(
+                    contentState,
+                    new SelectionState({
+                        anchorKey: blockKey,
+                        anchorOffset: 0,
+                        focusKey: blockKey,
+                        focusOffset: 2, // Length of '# '
+                    }),
+                    newText
+                );
+                // const newSelectionState = new SelectionState({
+                //     anchorKey: blockKey,
+                //     anchorOffset: 0,
+                //     focusKey: blockKey,
+                //     focusOffset: newText.length,
+                // });
+                newEditorState = EditorState.push(newEditorState, newContentState, 'replace-text');
+
+                // newEditorState = RichUtils.toggleInlineStyle(newEditorState, 'BOLD', newSelectionState);
+
+
+                // const newEditorStateWithBold = RichUtils.toggleInlineStyle(newEditorState, 'BOLD', newSelectionState);
+                // newEditorState = EditorState.forceSelection(newEditorStateWithBold, newSelectionState);
+            }
+        });
+        setEditorState(newEditorState);
+
+
+        // const newEditorStateWithBold = RichUtils.toggleInlineStyle(editorState, 'BOLD');
+        // const newEditorStateWithBold = RichUtils.toggleInlineStyle(newEditorState, 'BOLD');
+        // setEditorState(newEditorStateWithBold);
+    }
+
     return (
         <div className="editor-wrapper" onClick={focusEditor}>
-            {/* <Toolbar editorState={editorState} setEditorState={setEditorState} /> */}
+            <Toolbar editorState={editorState} setEditorState={setEditorState} />
             <div className="editor-container">
                 <Editor
                     ref={editor}
@@ -138,11 +194,7 @@ const DraftEditor = () => {
                     editorState={editorState}
                     customStyleMap={styleMap}
                     blockStyleFn={myBlockStyleFn}
-                    onChange={(editorState) => {
-                        const contentState = editorState.getCurrentContent();
-                        console.log(convertToRaw(contentState));
-                        setEditorState(editorState);
-                    }}
+                    onChange={changeHandler}
                 />
             </div>
         </div>

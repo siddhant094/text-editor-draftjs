@@ -75,3 +75,13 @@ button {
 .justifyAlign {
   text-align: justify;
 }
+
+.bold {
+  font-weight: bolder;
+  font-size: larger;
+  font-style: italic;
+}
+
+.italic {
+  font-style: italic;
+}
